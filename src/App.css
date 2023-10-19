@@ -1,38 +1,67 @@
-.App {
-  text-align: center;
+body {
+  background-color: #004507;
+  font-family: 'JetBrains Mono', monospace;
+  color: white;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.hex-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 7px;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+.hex {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  background-color: #bd9e12;
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+@media only screen and (max-width: 400px) {
+  .hex {
+    width: 100px;
+    height: 106px; 
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+@media only screen and (min-width: 400px) {
+  .hex {
+    width: 120px;
+    height: 132px; 
+  }
+}
+@media only screen and (min-width: 800px) {
+  .hex {
+    width: 240px;
+    height: 265px; 
+  }
+}
+
+.inner {
+  transform: scale(0.9,0.9);
+  background-color: #6C3EA1;
+}
+.player-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  text-align: center;
   color: white;
+  font-weight: bold;
+  z-index: 1;
+  margin-top: -20px;
 }
 
-.App-link {
-  color: #61dafb;
+.player-info > * {
+  margin: 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.title {
+  color: white;
 }
