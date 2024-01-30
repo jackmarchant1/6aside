@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import axios from 'axios';
 import PlayerDisplay from './components/PlayerDisplay';
 import { Player } from './lib/objects/Classes';
@@ -7,18 +8,40 @@ import { useTrail, animated } from 'react-spring';
 
 
 function DataDisplay() {
-  const [squadData, setSquadData] = useState();
-  const [fanData, setFanData] = useState();
-  const [isModalVisible, setIsModalVisible] = useState(false); // New state for modal visibility
+   const sortOptions = [
+        { value: 'Goals', label: 'Goals' },
+        { value: 'Assists', label: 'Assists' },
+        { value: 'Appearances', label: 'Appearances' },
+    ];
+  const [squadData, setSquadData] = useState([]);
+  const [fanData, setFanData] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false); // modalVisbile means we are in list view
+  const [selectedOption, setSelectedOption] = useState(sortOptions[0]);
 
-  const [trail, setTrail] = useTrail(squadData?.length || 0, () => ({
+  const [trail, setTrail] = useTrail(squadData?.length || 0, index => ({
     transform: 'translateX(0%)',
     opacity: 1,
+    delay: index * 100, // Adjust the multiplier to control the delay duration between items
+    from: { transform: 'translateX(-100%)', opacity: 0 },
   }));
   const toggleModal = () => {
-    setIsModalVisible(prevState => !prevState);
-  };
+    setIsModalVisible(prevState => {
+        if (!prevState) { // If we're about to show in list view
+            const sortedSquadData = [...squadData].sort((a, b) => b[selectedOption.value] - a[selectedOption.value]);
+            setSquadData(sortedSquadData);
+        } else {
+            const sortedSquadData = [...squadData].sort((a, b) => b.PlayerNumber - a.PlayerNumber);
+            setSquadData(sortedSquadData);
+        }
 
+        return !prevState;
+      });
+  };
+  useEffect(() => {
+        if (squadData === null) return;
+        const sortedSquadData = [...squadData].sort((a, b) => b[selectedOption.value] - a[selectedOption.value]);
+        setSquadData(sortedSquadData);
+    }, [selectedOption]);  
 
   useEffect(() => {
     const squadURL = "https://docs.google.com/spreadsheets/d/1x6YQo3FwHJOeLdMk9Annqn1vWdacNyhVrZ2Lj2oygzQ/export?format=csv&id=1x6YQo3FwHJOeLdMk9Annqn1vWdacNyhVrZ2Lj2oygzQ&gid=0";
@@ -32,6 +55,7 @@ function DataDisplay() {
                 Papa.parse(csvData, {
                     header: true,
                     complete: (result) => {
+                        console.log("Squad data loaded");
                         setSquadData(result.data);
                     }
                 });
@@ -55,21 +79,43 @@ function DataDisplay() {
                 console.error("There was an error fetching the data", error);
             });
   }, []);
-    useEffect(() => {
-        if (isModalVisible) {
-        setTrail({
-            transform: 'translateX(0%)',
-            opacity: 1,
-            from: { transform: 'translateX(50%)', opacity: 1 },
-        });
+  useEffect(() => {
+    if (isModalVisible) {
+        // Animate the expansion and translation from the left when modal (list view) is visible
+        setTrail(index => ({
+            reset: true,
+            to: {
+              transform: 'translateX(0%)',
+              opacity: 1,
+              width: '100%',
+            },
+            from: {
+              transform: 'translateX(-100%)',
+              opacity: 0,
+              width: '0%', // Adjust this based on your needs
+            },
+            
+            // delay: index * 100, // Applying staggered delay
+          }));
         } else {
-        setTrail({
-            transform: 'translateX(0%)',
-            opacity: 1,
-            from: {transform: 'translateX(-20%)'},
-        });
+            setTrail({
+                to: {
+                    transform: 'translateX(0%)',
+                    opacity: 1,
+                },
+                from: {
+                    transform: 'translateX(-20%)', 
+                    opacity: 0, 
+                }
+            });
         }
     }, [isModalVisible]);
+
+    
+    
+
+    
+
 
   return (
     <>
@@ -82,14 +128,32 @@ function DataDisplay() {
 
     <div className="squad">
         <div className="d-flex justify-content-between p-2 align-items-center">
-            <h1 clasName="title">Squad</h1>
+            <h1 className="title">Squad</h1>
             <i className="bi bi-sort-numeric-down title" onClick={toggleModal}></i>
         </div>
-        
-        <div className={`d-flex ${isModalVisible ? 'flex-column align-items-start' : 'flex-wrap justify-content-around'}`}>
+        {isModalVisible ? 
+        <Select
+        defaultValue={selectedOption}
+        onChange={setSelectedOption}
+        options={sortOptions}
+        /> 
+        : 
+        <></>
+      }
+        <div className={`d-flex ${isModalVisible ? 'flex-column' : 'flex-wrap justify-content-around'}`}>
             {squadData && trail.map((props, index) => (
-            <animated.div key={index} style={props}>
-                <PlayerDisplay {...new Player(squadData[index].PlayerID, squadData[index].PlayerName, squadData[index].PlayerNumber, "")} />
+            <animated.div className={`d-flex ${isModalVisible ? '' : 'w-auto'}`}  key={index} style={props}>
+                <PlayerDisplay
+                    id={squadData[index].PlayerID}
+                    name={squadData[index].PlayerName}
+                    number={squadData[index].PlayerNumber}
+                    bitmoji="" 
+                    goals={squadData[index].Goals}
+                    assists={squadData[index].Assists}
+                    mom={squadData[index].MOM}
+                    apps={squadData[index].Appearances}
+                    showBanner={isModalVisible}
+                />
             </animated.div>
             ))}
         </div>
@@ -100,8 +164,18 @@ function DataDisplay() {
         <div className="d-flex flex-wrap justify-content-between">
             {fanData && fanData.map((item, index) => (
                 <div key={index}>
-                    {/* Render your data here */}
-                    <PlayerDisplay {...new Player(item.FanID, item.FanName, item.FanNumber, "")} />
+                    <PlayerDisplay
+                        id={item.FanID}
+                        name={item.FanName}
+                        number={item.FanNumber}
+                        bitmoji="" 
+                        goals={0} 
+                        assists={0} 
+                        mom={0} 
+                        apps={0} 
+                        showBanner={isModalVisible}
+                    />
+
                 </div>
             ))}
         </div>
